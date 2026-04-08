@@ -18,19 +18,28 @@ def db_engine():
 
 @pytest.fixture(scope="function")
 def db(db_engine):
-    SessionLocal = sessionmaker(bind=db_engine)
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    SessionLocal = sessionmaker(bind=connection, join_transaction_mode="create_savepoint")
     session = SessionLocal()
     yield session
     session.close()
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture(scope="function")
-def client(db):
+def client(db_engine):
     from backend.main import app
     from backend.database import get_db
 
     def override_get_db():
-        yield db
+        TestSession = sessionmaker(bind=db_engine)
+        session = TestSession()
+        try:
+            yield session
+        finally:
+            session.close()
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
