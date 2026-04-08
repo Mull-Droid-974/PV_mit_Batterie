@@ -3,17 +3,9 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models import EnergyData
+from backend.constants import PERIOD_MAP
 
 router = APIRouter(prefix="/api/data", tags=["data"])
-
-PERIOD_MAP: dict[str, int] = {
-    "7d": 7,
-    "1m": 30,
-    "3m": 90,
-    "6m": 180,
-    "9m": 270,
-    "1y": 365,
-}
 
 
 def _period_to_range(period: str) -> tuple[datetime, datetime]:

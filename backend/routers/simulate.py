@@ -7,17 +7,14 @@ from backend.models import EnergyData
 from backend.simulation import (
     HourlyReading,
     BatteryScenario,
+    SimulationResult,
     simulate_without_battery,
     simulate_with_battery,
     calculate_roi,
 )
+from backend.constants import PERIOD_MAP, GRID_PRICE, FEED_IN_PRICE
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
-
-PERIOD_MAP = {"7d": 7, "1m": 30, "3m": 90, "6m": 180, "9m": 270, "1y": 365}
-
-GRID_PRICE = 0.32
-FEED_IN_PRICE = 0.08
 
 
 class SimulateRequest(BaseModel):
@@ -27,7 +24,7 @@ class SimulateRequest(BaseModel):
     investment_chf: float = Field(..., gt=0)
 
 
-def _result_to_dict(r) -> dict:
+def _result_to_dict(r: SimulationResult) -> dict:
     return {
         "grid_consumption_kwh": round(r.grid_consumption_kwh, 2),
         "grid_feed_in_kwh": round(r.grid_feed_in_kwh, 2),
