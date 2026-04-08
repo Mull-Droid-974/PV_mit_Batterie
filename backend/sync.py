@@ -3,13 +3,12 @@ Sync worker: fetches Solar Manager data and upserts into PostgreSQL.
 - On first run: fetches last 12 months
 - Daily: fetches last 2 days (overlap to catch late-arriving data)
 """
-import os
 from datetime import datetime, timedelta, timezone
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
-from backend.database import SessionLocal, engine
-from backend.models import EnergyData, Base
+from backend.database import SessionLocal
+from backend.models import EnergyData
 from backend.solar_manager import SolarManagerClient, SolarManagerError
 
 logger = logging.getLogger(__name__)
@@ -43,12 +42,15 @@ def sync_historical(months: int = 12) -> None:
     logger.info(f"Starting historical sync: {start.date()} → {end.date()}")
     try:
         readings = client.get_hourly_data(start, end)
-        db = SessionLocal()
-        count = _upsert_readings(db, readings)
-        db.close()
-        logger.info(f"Historical sync complete: {count} rows")
     except SolarManagerError as e:
-        logger.error(f"Historical sync failed: {e}")
+        logger.error(f"Historical sync failed (API): {e}")
+        return
+    db = SessionLocal()
+    try:
+        count = _upsert_readings(db, readings)
+        logger.info(f"Historical sync complete: {count} rows")
+    finally:
+        db.close()
 
 
 def sync_recent() -> None:
@@ -59,12 +61,15 @@ def sync_recent() -> None:
     logger.info(f"Daily sync: {start.date()} → {end.date()}")
     try:
         readings = client.get_hourly_data(start, end)
-        db = SessionLocal()
-        count = _upsert_readings(db, readings)
-        db.close()
-        logger.info(f"Daily sync complete: {count} rows")
     except SolarManagerError as e:
-        logger.error(f"Daily sync failed: {e}")
+        logger.error(f"Daily sync failed (API): {e}")
+        return
+    db = SessionLocal()
+    try:
+        count = _upsert_readings(db, readings)
+        logger.info(f"Daily sync complete: {count} rows")
+    finally:
+        db.close()
 
 
 def create_scheduler() -> BackgroundScheduler:
