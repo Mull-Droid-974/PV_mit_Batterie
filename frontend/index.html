@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV Batterie-Analyse</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>PV Batterie-Analyse — Chüngstrasse 8, Embrach</h1>
+    <span id="last-sync">Laden...</span>
+  </header>
+  <main>
+    <div class="period-bar" id="period-bar">
+      <button class="period-btn active" data-period="7d">7 Tage</button>
+      <button class="period-btn" data-period="1m">1 Monat</button>
+      <button class="period-btn" data-period="3m">3 Monate</button>
+      <button class="period-btn" data-period="6m">6 Monate</button>
+      <button class="period-btn" data-period="9m">9 Monate</button>
+      <button class="period-btn" data-period="1y">1 Jahr</button>
+    </div>
+
+    <div id="roi-highlight" class="roi-highlight" style="display:none">
+      <div class="roi-item">
+        <span class="roi-label">Jährliche Ersparnis</span>
+        <span class="roi-value" id="roi-annual">—</span>
+      </div>
+      <div class="roi-item">
+        <span class="roi-label">Amortisation</span>
+        <span class="roi-value" id="roi-payback">—</span>
+      </div>
+      <div class="roi-item">
+        <span class="roi-label">Ersparnis im Zeitraum</span>
+        <span class="roi-value" id="roi-period">—</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Ohne Batterie</h3>
+        <div class="stat-row"><span>Netzbezug</span><span class="val" id="wo-grid">—</span></div>
+        <div class="stat-row"><span>Einspeisung</span><span class="val" id="wo-feed">—</span></div>
+        <div class="stat-row"><span>Netzkosten</span><span class="val" id="wo-cost">—</span></div>
+        <div class="stat-row"><span>Einspeise-Erlös</span><span class="val" id="wo-rev">—</span></div>
+        <div class="stat-row highlight"><span>Netto</span><span class="val" id="wo-net">—</span></div>
+      </div>
+      <div class="stat-card">
+        <h3>Mit Batterie</h3>
+        <div class="stat-row"><span>Netzbezug</span><span class="val" id="wb-grid">—</span></div>
+        <div class="stat-row"><span>Einspeisung</span><span class="val" id="wb-feed">—</span></div>
+        <div class="stat-row"><span>Netzkosten</span><span class="val" id="wb-cost">—</span></div>
+        <div class="stat-row"><span>Einspeise-Erlös</span><span class="val" id="wb-rev">—</span></div>
+        <div class="stat-row highlight"><span>Netto</span><span class="val" id="wb-net">—</span></div>
+      </div>
+    </div>
+
+    <div class="battery-config">
+      <h3>Batterie-Konfigurator</h3>
+      <div class="preset-btns">
+        <button class="preset-btn active" data-cap="5">5 kWh</button>
+        <button class="preset-btn" data-cap="10">10 kWh</button>
+        <button class="preset-btn" data-cap="15">15 kWh</button>
+      </div>
+      <div class="config-inputs">
+        <label>Kapazität (kWh)<input id="cap-input" type="number" value="5" min="1" step="0.5"></label>
+        <label>Wirkungsgrad (%)<input id="eff-input" type="number" value="90" min="50" max="100"></label>
+        <label>Investition (CHF)<input id="inv-input" type="number" value="8000" min="100" step="100"></label>
+        <button id="simulate-btn">Simulieren</button>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h3>Tagesgang — Ø PV-Produktion vs. Verbrauch</h3>
+        <canvas id="chart-daily-profile"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Energiefluss im Zeitraum</h3>
+        <canvas id="chart-energy-flow"></canvas>
+      </div>
+      <div class="chart-card" id="chart-amort-card" style="display:none">
+        <h3>Kumulierte Ersparnis mit Batterie</h3>
+        <canvas id="chart-amortisation"></canvas>
+      </div>
+    </div>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
