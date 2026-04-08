@@ -4,8 +4,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from backend.database import engine
-from backend.models import Base
+from backend.database import engine, SessionLocal
+from backend.models import Base, EnergyData
 from backend.routers.data import router as data_router
 from backend.routers.simulate import router as simulate_router
 from backend.sync import create_scheduler, sync_historical
@@ -23,11 +23,11 @@ async def lifespan(app: FastAPI):
     logger.info("Database tables created/verified")
 
     # Trigger historical sync if DB is empty
-    from backend.database import SessionLocal
-    from backend.models import EnergyData
     db = SessionLocal()
-    count = db.query(EnergyData).count()
-    db.close()
+    try:
+        count = db.query(EnergyData).count()
+    finally:
+        db.close()
     if count == 0:
         logger.info("Empty database — starting historical sync (12 months)")
         sync_historical(months=12)
@@ -48,7 +48,7 @@ app = FastAPI(title="PV Batterie-Analyse", lifespan=lifespan)
 app.include_router(data_router)
 app.include_router(simulate_router)
 
-# Serve frontend static files
+# Serve frontend static files (frontend/ created in Task 9)
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
