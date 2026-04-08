@@ -1,13 +1,16 @@
 """
 Solar Manager API client.
 
-Confirmed endpoints (fill in during Task 4 exploration):
+Confirmed endpoints (fill in during Task 10 after exploration):
 - POST {BASE_URL}/api/v1/user/login  → returns {"token": "..."}
 - GET  {BASE_URL}/api/v1/sensor-data?from=ISO&to=ISO&interval=hour
        → returns list of hourly readings
 
 Update BASE_URL, endpoint paths, and field name mappings below
 based on findings from the exploration step.
+
+Note: uses synchronous httpx — safe for APScheduler background jobs.
+Do NOT call from async FastAPI route handlers without wrapping in a thread.
 """
 import os
 from datetime import datetime
@@ -17,8 +20,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_URL = os.getenv("SOLAR_MANAGER_BASE_URL", "https://cloud.solarmanager.ch")
-EMAIL = os.getenv("SOLAR_MANAGER_EMAIL", "")
-PASSWORD = os.getenv("SOLAR_MANAGER_PASSWORD", "")
 
 
 class SolarManagerError(Exception):
@@ -26,14 +27,16 @@ class SolarManagerError(Exception):
 
 
 class SolarManagerClient:
-    def __init__(self):
+    def __init__(self, email: str = "", password: str = ""):
+        self._email = email or os.getenv("SOLAR_MANAGER_EMAIL", "")
+        self._password = password or os.getenv("SOLAR_MANAGER_PASSWORD", "")
         self._token: str | None = None
 
     def _authenticate(self) -> str:
         """POST login, return bearer token. Update path/field if needed."""
         resp = httpx.post(
             f"{BASE_URL}/api/v1/user/login",
-            json={"email": EMAIL, "password": PASSWORD},
+            json={"email": self._email, "password": self._password},
             timeout=30,
         )
         if resp.status_code != 200:
@@ -47,7 +50,7 @@ class SolarManagerClient:
             self._token = self._authenticate()
         return self._token
 
-    def get_hourly_data(self, start: datetime, end: datetime) -> list[dict]:
+    def get_hourly_data(self, start: datetime, end: datetime, _retry: bool = True) -> list[dict]:
         """
         Fetch hourly energy data between start and end.
         Returns list of dicts with keys:
@@ -55,6 +58,7 @@ class SolarManagerClient:
         All values in kWh.
 
         UPDATE: adjust endpoint path, date format, and field name mapping below.
+        VERIFY: /1000 conversion assumes API returns Watts (not Wh or kWh).
         """
         token = self._get_token()
         resp = httpx.get(
@@ -68,9 +72,10 @@ class SolarManagerClient:
             timeout=60,
         )
         if resp.status_code == 401:
-            # Token expired — re-authenticate once
+            if not _retry:
+                raise SolarManagerError("Auth failed after token refresh (persistent 401)")
             self._token = self._authenticate()
-            return self.get_hourly_data(start, end)
+            return self.get_hourly_data(start, end, _retry=False)
         if resp.status_code != 200:
             raise SolarManagerError(f"Data fetch failed: {resp.status_code} {resp.text}")
 
