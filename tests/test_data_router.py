@@ -4,7 +4,7 @@ from backend.models import EnergyData
 
 def _seed(db, n_days: int = 10):
     """Insert n_days × 24 hourly rows."""
-    base = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    base = datetime.now(tz=timezone.utc) - timedelta(days=n_days - 1)
     for d in range(n_days):
         for h in range(24):
             ts = base + timedelta(days=d, hours=h)

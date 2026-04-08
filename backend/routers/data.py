@@ -38,6 +38,7 @@ def get_data(period: str = Query("7d"), db: Session = Depends(get_db)):
     if not rows:
         return {
             "period": period,
+            "days_in_period": PERIOD_MAP[period],
             "summary": {
                 "pv_production_kwh": 0.0,
                 "grid_consumption_kwh": 0.0,
