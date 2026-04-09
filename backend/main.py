@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
@@ -29,8 +30,8 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
     if count == 0:
-        logger.info("Empty database — starting historical sync (12 months)")
-        sync_historical(months=12)
+        logger.info("Empty database — starting historical sync in background (12 months)")
+        threading.Thread(target=sync_historical, kwargs={"months": 12}, daemon=True).start()
 
     # Start daily sync scheduler
     scheduler = create_scheduler()
