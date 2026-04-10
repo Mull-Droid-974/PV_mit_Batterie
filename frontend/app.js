@@ -34,11 +34,28 @@ document.getElementById("simulate-btn").addEventListener("click", runSimulation)
 async function loadData() {
   const resp = await fetch(`/api/data?period=${currentPeriod}`);
   currentData = await resp.json();
+  renderEnergyOverview(currentData);
   renderEnergyFlow(currentData);
   renderDailyProfile(currentData);
   document.getElementById("last-sync").textContent =
     `Daten bis: ${new Date().toLocaleDateString("de-CH")}`;
   if (currentSim) runSimulation();
+}
+
+function renderEnergyOverview(data) {
+  const s = data.summary;
+  const totalConsumption = s.self_consumption_kwh + s.grid_consumption_kwh;
+  const selfConsRate = s.pv_production_kwh > 0
+    ? (s.self_consumption_kwh / s.pv_production_kwh * 100).toFixed(1)
+    : "—";
+  const autarkyRate = totalConsumption > 0
+    ? (s.self_consumption_kwh / totalConsumption * 100).toFixed(1)
+    : "—";
+
+  document.getElementById("eo-consumption").textContent = `${totalConsumption.toFixed(1)} kWh`;
+  document.getElementById("eo-production").textContent = `${s.pv_production_kwh.toFixed(1)} kWh`;
+  document.getElementById("eo-selfcons").textContent = selfConsRate !== "—" ? `${selfConsRate} %` : "—";
+  document.getElementById("eo-autarky").textContent = autarkyRate !== "—" ? `${autarkyRate} %` : "—";
 }
 
 async function runSimulation() {
