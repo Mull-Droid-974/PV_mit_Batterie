@@ -9,17 +9,23 @@ function destroyChart(id) {
 }
 
 async function loadForecast() {
-  const resp = await fetch("/api/forecast");
-  const data = await resp.json();
-  forecastData = data.forecast;
-  historicalData = data.historical;
+  try {
+    const resp = await fetch("/api/forecast");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    forecastData = data.forecast;
+    historicalData = data.historical;
 
-  renderWeatherStrip();
-  renderBarChart();
-  selectDay(0);
+    renderWeatherStrip();
+    renderBarChart();
+    selectDay(0);
 
-  document.getElementById("last-updated").textContent =
-    `Aktualisiert: ${new Date().toLocaleTimeString("de-CH")}`;
+    document.getElementById("last-updated").textContent =
+      `Aktualisiert: ${new Date().toLocaleTimeString("de-CH")}`;
+  } catch (err) {
+    console.error("Failed to load forecast:", err);
+    document.getElementById("last-updated").textContent = "Fehler beim Laden";
+  }
 }
 
 function renderWeatherStrip() {
@@ -82,6 +88,7 @@ function renderBarChart() {
 }
 
 function selectDay(index) {
+  if (!forecastData || index < 0 || index >= forecastData.length) return;
   selectedDay = index;
   document.querySelectorAll(".weather-day").forEach((el, i) => {
     el.classList.toggle("active", i === index);
