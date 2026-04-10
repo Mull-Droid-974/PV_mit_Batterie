@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV Prognose</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>PV Batterie-Analyse — Chüngstrasse 8, Embrach</h1>
+    <div style="display:flex;align-items:center;gap:2rem;">
+      <span id="last-updated">Laden...</span>
+      <nav class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/forecast" class="active">Prognose</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="weather-strip" id="weather-strip">
+      <!-- filled by forecast.js -->
+    </div>
+
+    <div class="chart-card forecast-section">
+      <h3>7-Tage PV-Prognose vs. Vorjahr</h3>
+      <canvas id="chart-forecast-bar"></canvas>
+    </div>
+
+    <div class="chart-card forecast-section">
+      <h3 id="detail-title">Stündlicher Verlauf — heute</h3>
+      <canvas id="chart-hourly"></canvas>
+    </div>
+
+    <div class="chart-card forecast-section">
+      <h3>Niederschlag (mm/h)</h3>
+      <canvas id="chart-precip"></canvas>
+    </div>
+  </main>
+  <script src="/static/forecast.js"></script>
+</body>
+</html>
