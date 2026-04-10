@@ -38,6 +38,12 @@ def test_build_forecast_structure():
     assert "cloud_cover_pct" in day
     assert "hourly" in day
     assert len(day["hourly"]) == 24
+    hourly_entry = day["hourly"][0]
+    assert "hour" in hourly_entry
+    assert "pv_kwh" in hourly_entry
+    assert "temp_c" in hourly_entry
+    assert "precipitation_mm" in hourly_entry
+    assert "cloud_cover_pct" in hourly_entry
 
 
 def test_build_forecast_pv_calculation():
