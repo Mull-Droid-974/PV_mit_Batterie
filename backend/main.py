@@ -9,6 +9,7 @@ from backend.database import engine, SessionLocal
 from backend.models import Base, EnergyData
 from backend.routers.data import router as data_router
 from backend.routers.simulate import router as simulate_router
+from backend.routers.forecast import router as forecast_router
 from backend.sync import create_scheduler, sync_historical
 
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +49,7 @@ app = FastAPI(title="PV Batterie-Analyse", lifespan=lifespan)
 
 app.include_router(data_router)
 app.include_router(simulate_router)
+app.include_router(forecast_router)
 
 # Serve frontend static files (frontend/ created in Task 9)
 if FRONTEND_DIR.exists():
@@ -56,3 +58,7 @@ if FRONTEND_DIR.exists():
     @app.get("/")
     def serve_index():
         return FileResponse(FRONTEND_DIR / "index.html")
+
+    @app.get("/forecast")
+    def serve_forecast():
+        return FileResponse(FRONTEND_DIR / "forecast.html")
