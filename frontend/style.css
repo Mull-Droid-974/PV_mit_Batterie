@@ -74,6 +74,8 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
 
 .stat-row .val { font-weight: 700; }
 .stat-row.highlight .val { color: #16a34a; font-size: 1.1rem; }
+.stat-row.secondary { opacity: 0.5; font-size: 0.88rem; }
+.stat-row.secondary .val { font-weight: 500; }
 
 .battery-config {
   background: #fff;

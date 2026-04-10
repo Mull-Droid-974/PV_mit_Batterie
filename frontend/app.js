@@ -78,6 +78,7 @@ function renderStats(sim) {
   const wb = sim.with_battery;
   const fmt = (v) => `${v.toFixed(1)} kWh`;
   const fmtCHF = (v) => `CHF ${v.toFixed(2)}`;
+  const fmtPct = (v) => `${v.toFixed(1)} %`;
 
   document.getElementById("wo-grid").textContent = fmt(wo.grid_consumption_kwh);
   document.getElementById("wo-feed").textContent = fmt(wo.grid_feed_in_kwh);
@@ -90,6 +91,20 @@ function renderStats(sim) {
   document.getElementById("wb-cost").textContent = fmtCHF(wb.grid_cost_chf);
   document.getElementById("wb-rev").textContent = fmtCHF(wb.feed_in_revenue_chf);
   document.getElementById("wb-net").textContent = fmtCHF(wb.net_cost_chf);
+
+  // Eigenverbrauchsanteil & Autarkieanteil (berechnet aus summary + simulation)
+  const pv = currentData?.summary?.pv_production_kwh ?? 0;
+  const totalCons = (currentData?.summary?.self_consumption_kwh ?? 0) + wo.grid_consumption_kwh;
+  if (pv > 0) {
+    const woSelf = pv - wo.grid_feed_in_kwh;
+    const wbSelf = pv - wb.grid_feed_in_kwh;
+    document.getElementById("wo-selfcons").textContent = fmtPct(woSelf / pv * 100);
+    document.getElementById("wb-selfcons").textContent = fmtPct(wbSelf / pv * 100);
+    if (totalCons > 0) {
+      document.getElementById("wo-autarky").textContent = fmtPct(woSelf / totalCons * 100);
+      document.getElementById("wb-autarky").textContent = fmtPct(wbSelf / totalCons * 100);
+    }
+  }
 
   const roi = sim.roi;
   document.getElementById("roi-annual").textContent = `CHF ${roi.annual_savings_chf.toFixed(0)}/Jahr`;
