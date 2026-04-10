@@ -1,5 +1,7 @@
 // State
 let currentPeriod = "7d";
+let currentFromDate = null;
+let currentToDate = null;
 let currentData = null;
 let currentSim = null;
 const charts = {};
@@ -16,6 +18,22 @@ document.getElementById("period-bar").addEventListener("click", (e) => {
   document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   currentPeriod = btn.dataset.period;
+  const customRange = document.getElementById("custom-range");
+  if (currentPeriod === "custom") {
+    customRange.style.display = "flex";
+  } else {
+    customRange.style.display = "none";
+    currentFromDate = null;
+    currentToDate = null;
+    loadData();
+  }
+});
+
+// Custom date range
+document.getElementById("custom-load-btn").addEventListener("click", () => {
+  currentFromDate = document.getElementById("from-date").value;
+  currentToDate = document.getElementById("to-date").value;
+  if (!currentFromDate || !currentToDate) return;
   loadData();
 });
 
@@ -32,7 +50,11 @@ document.querySelector(".preset-btns").addEventListener("click", (e) => {
 document.getElementById("simulate-btn").addEventListener("click", runSimulation);
 
 async function loadData() {
-  const resp = await fetch(`/api/data?period=${currentPeriod}`);
+  let url = `/api/data?period=${currentPeriod}`;
+  if (currentPeriod === "custom" && currentFromDate && currentToDate) {
+    url += `&from_date=${currentFromDate}&to_date=${currentToDate}`;
+  }
+  const resp = await fetch(url);
   currentData = await resp.json();
   renderEnergyOverview(currentData);
   renderEnergyFlow(currentData);
@@ -63,10 +85,16 @@ async function runSimulation() {
   const efficiency = parseFloat(document.getElementById("eff-input").value) / 100;
   const investment_chf = parseFloat(document.getElementById("inv-input").value);
 
+  const body = { period: currentPeriod, capacity_kwh, efficiency, investment_chf };
+  if (currentPeriod === "custom" && currentFromDate && currentToDate) {
+    body.from_date = currentFromDate;
+    body.to_date = currentToDate;
+  }
+
   const resp = await fetch("/api/simulate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ period: currentPeriod, capacity_kwh, efficiency, investment_chf }),
+    body: JSON.stringify(body),
   });
   currentSim = await resp.json();
   renderStats(currentSim);

@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import date as date_type
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -13,13 +12,16 @@ from backend.simulation import (
     simulate_with_battery,
     calculate_roi,
 )
-from backend.constants import PERIOD_MAP, GRID_PRICE, FEED_IN_PRICE
+from backend.constants import GRID_PRICE, FEED_IN_PRICE
+from backend.routers.data import _resolve_range
 
 router = APIRouter(prefix="/api/simulate", tags=["simulate"])
 
 
 class SimulateRequest(BaseModel):
-    period: str = Field(..., description="One of: 7d, 1m, 3m, 6m, 9m, 1y")
+    period: str = Field(..., description="One of: 1d, 7d, 1m, 3m, 6m, 9m, 1y, custom")
+    from_date: str | None = Field(None, description="YYYY-MM-DD, required when period=custom")
+    to_date: str | None = Field(None, description="YYYY-MM-DD, required when period=custom")
     capacity_kwh: float = Field(..., gt=0)
     efficiency: float = Field(0.9, ge=0.1, le=1.0)
     investment_chf: float = Field(..., gt=0)
@@ -37,19 +39,7 @@ def _result_to_dict(r: SimulationResult) -> dict:
 
 @router.post("")
 def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
-    if PERIOD_MAP.get(req.period) is None:
-        raise HTTPException(status_code=422, detail=f"Invalid period. Use: {list(PERIOD_MAP)}")
-
-    days = PERIOD_MAP[req.period]
-    if req.period == "1d":
-        _tz = ZoneInfo("Europe/Zurich")
-        today = datetime.now(tz=_tz).date()
-        yesterday = today - timedelta(days=1)
-        start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, tzinfo=_tz)
-        end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, tzinfo=_tz)
-    else:
-        end = datetime.now(tz=timezone.utc)
-        start = end - timedelta(days=days)
+    start, end, days = _resolve_range(req.period, req.from_date, req.to_date)
 
     rows = (
         db.query(EnergyData)
