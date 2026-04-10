@@ -40,6 +40,7 @@ def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
     if PERIOD_MAP.get(req.period) is None:
         raise HTTPException(status_code=422, detail=f"Invalid period. Use: {list(PERIOD_MAP)}")
 
+    days = PERIOD_MAP[req.period]
     if req.period == "1d":
         _tz = ZoneInfo("Europe/Zurich")
         today = datetime.now(tz=_tz).date()
@@ -48,7 +49,7 @@ def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
         end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, tzinfo=_tz)
     else:
         end = datetime.now(tz=timezone.utc)
-        start = end - timedelta(days=PERIOD_MAP[req.period])
+        start = end - timedelta(days=days)
 
     rows = (
         db.query(EnergyData)
