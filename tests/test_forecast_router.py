@@ -1,5 +1,5 @@
 # tests/test_forecast_router.py
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 import pytest
 from backend.models import EnergyData
@@ -7,7 +7,6 @@ from backend.models import EnergyData
 
 def _make_om_response(days: int = 2) -> dict:
     """Minimal Open-Meteo response for testing."""
-    from datetime import date
     times = []
     for d in range(days):
         day = (date.today() + timedelta(days=d)).isoformat()
@@ -55,7 +54,6 @@ def test_build_forecast_pv_calculation():
 
 def test_fetch_historical_returns_null_when_no_data(db):
     from backend.routers.forecast import _fetch_historical
-    from datetime import date
     future_dates = [
         (date.today() + timedelta(days=i)).isoformat() for i in range(3)
     ]
@@ -66,7 +64,6 @@ def test_fetch_historical_returns_null_when_no_data(db):
 
 def test_fetch_historical_returns_value_when_data_exists(db):
     from backend.routers.forecast import _fetch_historical
-    from datetime import date
     # Insert data exactly 365 days ago
     last_year = date.today() - timedelta(days=365)
     ts = datetime(last_year.year, last_year.month, last_year.day, 12, 0, 0, tzinfo=timezone.utc)

@@ -1,8 +1,10 @@
 from datetime import date, datetime, timedelta, timezone
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends
-import httpx
+
 from backend.database import get_db
 from backend.models import EnergyData
 
@@ -16,30 +18,40 @@ _AZIMUTH = 26  # Open-Meteo: 0=South, 26° west of south = 206° compass
 
 
 def _fetch_open_meteo() -> dict:
-    resp = httpx.get(
-        "https://api.open-meteo.com/v1/forecast",
-        params={
-            "latitude": _LAT,
-            "longitude": _LON,
-            "hourly": "global_tilted_irradiance,temperature_2m,precipitation,cloud_cover",
-            "tilt": _TILT,
-            "azimuth": _AZIMUTH,
-            "forecast_days": 8,
-            "timezone": "Europe/Zurich",
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        resp = httpx.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": _LAT,
+                "longitude": _LON,
+                "hourly": "global_tilted_irradiance,temperature_2m,precipitation,cloud_cover",
+                "tilt": _TILT,
+                "azimuth": _AZIMUTH,
+                "forecast_days": 8,
+                "timezone": "Europe/Zurich",
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.TimeoutException as exc:
+        raise HTTPException(status_code=504, detail="Open-Meteo request timed out") from exc
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"Open-Meteo returned {exc.response.status_code}") from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=502, detail="Could not reach Open-Meteo") from exc
 
 
 def _build_forecast(raw: dict) -> list[dict]:
-    hourly = raw["hourly"]
-    times = hourly["time"]
-    gti = hourly["global_tilted_irradiance"]
-    temp = hourly["temperature_2m"]
-    precip = hourly["precipitation"]
-    cloud = hourly["cloud_cover"]
+    try:
+        hourly = raw["hourly"]
+        times = hourly["time"]
+        gti = hourly["global_tilted_irradiance"]
+        temp = hourly["temperature_2m"]
+        precip = hourly["precipitation"]
+        cloud = hourly["cloud_cover"]
+    except KeyError as exc:
+        raise HTTPException(status_code=502, detail=f"Unexpected Open-Meteo response format: missing {exc}") from exc
 
     days: dict[str, dict] = {}
     for i, t in enumerate(times):
@@ -88,7 +100,12 @@ def _build_forecast(raw: dict) -> list[dict]:
 def _fetch_historical(forecast_dates: list[str], db: Session) -> list[dict]:
     result = []
     for d in forecast_dates:
-        last_year = date.fromisoformat(d) - timedelta(days=365)
+        dt = date.fromisoformat(d)
+        try:
+            last_year = dt.replace(year=dt.year - 1)
+        except ValueError:
+            # Feb 29 in a leap year → use Feb 28 in prior year
+            last_year = dt.replace(year=dt.year - 1, day=28)
         start = datetime(last_year.year, last_year.month, last_year.day, 0, 0, 0, tzinfo=timezone.utc)
         end = datetime(last_year.year, last_year.month, last_year.day, 23, 59, 59, tzinfo=timezone.utc)
         total = (
