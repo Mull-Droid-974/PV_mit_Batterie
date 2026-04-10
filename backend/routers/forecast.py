@@ -80,7 +80,7 @@ def _build_forecast(raw: dict) -> list[dict]:
             "cloud_cover_pct": int(cloud[i] or 0),
         })
 
-    today = date.today().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     result = []
     for k, d in sorted(days.items()):
         if k < today:

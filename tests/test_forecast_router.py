@@ -65,7 +65,10 @@ def test_fetch_historical_returns_null_when_no_data(db):
 def test_fetch_historical_returns_value_when_data_exists(db):
     from backend.routers.forecast import _fetch_historical
     # Insert data exactly 365 days ago
-    last_year = date.today() - timedelta(days=365)
+    try:
+        last_year = date.today().replace(year=date.today().year - 1)
+    except ValueError:
+        last_year = date.today().replace(year=date.today().year - 1, day=28)
     ts = datetime(last_year.year, last_year.month, last_year.day, 12, 0, 0, tzinfo=timezone.utc)
     db.add(EnergyData(
         timestamp=ts,
