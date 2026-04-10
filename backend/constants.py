@@ -1,4 +1,5 @@
 PERIOD_MAP: dict[str, int] = {
+    "1d": 1,
     "7d": 7,
     "1m": 30,
     "3m": 90,

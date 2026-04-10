@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -36,12 +37,18 @@ def _result_to_dict(r: SimulationResult) -> dict:
 
 @router.post("")
 def simulate(req: SimulateRequest, db: Session = Depends(get_db)):
-    days = PERIOD_MAP.get(req.period)
-    if days is None:
+    if PERIOD_MAP.get(req.period) is None:
         raise HTTPException(status_code=422, detail=f"Invalid period. Use: {list(PERIOD_MAP)}")
 
-    end = datetime.now(tz=timezone.utc)
-    start = end - timedelta(days=days)
+    if req.period == "1d":
+        _tz = ZoneInfo("Europe/Zurich")
+        today = datetime.now(tz=_tz).date()
+        yesterday = today - timedelta(days=1)
+        start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, tzinfo=_tz)
+        end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, tzinfo=_tz)
+    else:
+        end = datetime.now(tz=timezone.utc)
+        start = end - timedelta(days=PERIOD_MAP[req.period])
 
     rows = (
         db.query(EnergyData)

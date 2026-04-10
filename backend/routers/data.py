@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -7,13 +8,20 @@ from backend.constants import PERIOD_MAP
 
 router = APIRouter(prefix="/api/data", tags=["data"])
 
+_TZ_CH = ZoneInfo("Europe/Zurich")
+
 
 def _period_to_range(period: str) -> tuple[datetime, datetime]:
-    days = PERIOD_MAP.get(period)
-    if days is None:
+    if PERIOD_MAP.get(period) is None:
         raise HTTPException(status_code=422, detail=f"Invalid period '{period}'. Use: {list(PERIOD_MAP)}")
+    if period == "1d":
+        today = datetime.now(tz=_TZ_CH).date()
+        yesterday = today - timedelta(days=1)
+        start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, tzinfo=_TZ_CH)
+        end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, tzinfo=_TZ_CH)
+        return start, end
     end = datetime.now(tz=timezone.utc)
-    start = end - timedelta(days=days)
+    start = end - timedelta(days=PERIOD_MAP[period])
     return start, end
 
 
