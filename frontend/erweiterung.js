@@ -56,10 +56,10 @@ function renderKpis(data) {
   const north = data.north_estimate;
 
   document.getElementById('kpi-south').textContent = fmtKwh(south.total_kwh);
-  document.getElementById('kpi-south-sub').textContent = `${south.kwp} kWp · ${south.modules != null ? south.modules + ' Module' : 'SSW-Seite'}`;
+  document.getElementById('kpi-south-sub').textContent = `${south.kwp} kWp · SSW-Seite`;
 
   document.getElementById('kpi-north').textContent = fmtKwh(north.total_kwh);
-  document.getElementById('kpi-north-sub').textContent = `${north.kwp} kWp · ${north.modules != null ? north.modules + ' Module' : 'Nord-Schätzung'}`;
+  document.getElementById('kpi-north-sub').textContent = `${north.kwp} kWp · Nord-Schätzung`;
 
   document.getElementById('kpi-total').textContent = fmtKwh(data.combined_total_kwh);
   document.getElementById('kpi-total-sub').textContent =

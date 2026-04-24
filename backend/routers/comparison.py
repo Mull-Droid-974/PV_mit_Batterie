@@ -76,7 +76,7 @@ def _fetch_gti(tilt: int, azimuth: int, period_days: int, start: datetime, end: 
                     "hourly": "global_tilted_irradiance",
                     "tilt": tilt,
                     "azimuth": azimuth,
-                    "start_date": start.date().isoformat(),
+                    "start_date": start.astimezone(_TZ_CH).date().isoformat(),
                     "end_date": yesterday,
                     "timezone": "Europe/Zurich",
                 },
@@ -143,8 +143,12 @@ def get_comparison(
     south_gti_per_day = _sum_gti_per_day(south_raw)
     north_gti_per_day = _sum_gti_per_day(north_raw)
 
-    # Collect all dates present in either GTI or DB results
-    all_dates = sorted(set(south_gti_per_day) | set(north_gti_per_day) | set(south_daily))
+    # Collect all dates within the resolved period (clip GTI extras like today's partial data)
+    period_end_date = end.astimezone(_TZ_CH).date().isoformat()
+    all_dates = sorted(
+        d for d in (set(south_gti_per_day) | set(north_gti_per_day) | set(south_daily))
+        if d <= period_end_date
+    )
 
     # --- Step C: Compute north estimate per day ---
     south_result: list[dict] = []
