@@ -20,6 +20,7 @@ _SOUTH_AZIMUTH = 26      # Open-Meteo convention: 0=South, positive=West
 _NORTH_KWP = 7.2
 _NORTH_TILT = 38
 _NORTH_AZIMUTH = -154    # NNE: 26° compass → 26-180 = -154° Open-Meteo
+_DEFAULT_SELF_RATIO = 0.5  # assumed when no historical south data is available
 
 # Periods that can use the forecast API (≤ 92 days)
 _FORECAST_API_URL = "https://api.open-meteo.com/v1/forecast"
@@ -131,10 +132,9 @@ def get_comparison(
     for r in rows:
         day = r.timestamp.astimezone(_TZ_CH).date().isoformat()
         if day not in south_daily:
-            south_daily[day] = {"south_kwh": 0.0, "self_kwh": 0.0, "feed_in_kwh": 0.0}
+            south_daily[day] = {"south_kwh": 0.0, "self_kwh": 0.0}
         south_daily[day]["south_kwh"] += r.pv_production
         south_daily[day]["self_kwh"] += r.self_consumption
-        south_daily[day]["feed_in_kwh"] += r.grid_feed_in
 
     # --- Step B: Fetch GTI for south and north roof ---
     south_raw = _fetch_gti(_SOUTH_TILT, _SOUTH_AZIMUTH, period_days, start, end)
@@ -156,7 +156,7 @@ def get_comparison(
         north_gti_day = north_gti_per_day.get(day, 0.0)
 
         if south_gti_day > 0:
-            north_kwh = south_kwh_day * (north_gti_day / south_gti_day)
+            north_kwh = south_kwh_day * (north_gti_day / south_gti_day) * (_NORTH_KWP / _SOUTH_KWP)
         else:
             north_kwh = 0.0
 
@@ -173,12 +173,14 @@ def get_comparison(
     if total_south_kwh > 0:
         self_ratio = total_self_kwh / total_south_kwh
     else:
-        self_ratio = 0.5
+        self_ratio = _DEFAULT_SELF_RATIO
 
     annual_north_kwh = (total_north_kwh / period_days * 365) if period_days > 0 else 0.0
     north_self_kwh = annual_north_kwh * self_ratio
     north_feed_kwh = annual_north_kwh * (1 - self_ratio)
-    annual_chf = north_self_kwh * GRID_PRICE + north_feed_kwh * FEED_IN_PRICE
+    annual_self_savings_chf = round(north_self_kwh * GRID_PRICE, 1)
+    annual_feed_in_chf = round(north_feed_kwh * FEED_IN_PRICE, 1)
+    annual_total_chf = round(annual_self_savings_chf + annual_feed_in_chf, 1)
 
     combined_total_kwh = round(total_south_kwh + total_north_kwh, 2)
     gain_pct = round((total_north_kwh / total_south_kwh * 100), 1) if total_south_kwh > 0 else 0.0
@@ -200,8 +202,8 @@ def get_comparison(
         "gain_pct": gain_pct,
         "financial": {
             "annual_extra_kwh": round(annual_north_kwh, 1),
-            "annual_self_consumption_savings_chf": round(north_self_kwh * GRID_PRICE, 1),
-            "annual_feed_in_revenue_chf": round(north_feed_kwh * FEED_IN_PRICE, 1),
-            "annual_total_chf": round(annual_chf, 1),
+            "annual_self_consumption_savings_chf": annual_self_savings_chf,
+            "annual_feed_in_revenue_chf": annual_feed_in_chf,
+            "annual_total_chf": annual_total_chf,
         },
     }
