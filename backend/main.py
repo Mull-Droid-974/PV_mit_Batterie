@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from backend.database import engine, SessionLocal
 from backend.models import Base, EnergyData
+from backend.routers.comparison import router as comparison_router
 from backend.routers.data import router as data_router
 from backend.routers.simulate import router as simulate_router
 from backend.routers.forecast import router as forecast_router
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="PV Batterie-Analyse", lifespan=lifespan)
 
+app.include_router(comparison_router)
 app.include_router(data_router)
 app.include_router(simulate_router)
 app.include_router(forecast_router)
@@ -62,3 +64,7 @@ if FRONTEND_DIR.exists():
     @app.get("/forecast")
     def serve_forecast():
         return FileResponse(FRONTEND_DIR / "forecast.html")
+
+    @app.get("/erweiterung")
+    def serve_erweiterung():
+        return FileResponse(FRONTEND_DIR / "erweiterung.html")

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PV Erweiterung</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .kpi-card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.5;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+
+    .kpi-subtitle {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .chf-toggle-btn {
+      padding: 0.4rem 1.2rem;
+      border: 2px solid #16a34a;
+      border-radius: 20px;
+      background: #fff;
+      color: #16a34a;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.15s;
+      margin-bottom: 1.5rem;
+    }
+
+    .chf-toggle-btn.active,
+    .chf-toggle-btn:hover {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .finance-panel {
+      display: none;
+      background: #f0fdf4;
+      border: 2px solid #16a34a;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .finance-panel.visible {
+      display: block;
+    }
+
+    .finance-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .finance-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .finance-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.6;
+      margin-bottom: 0.25rem;
+    }
+
+    .finance-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #16a34a;
+    }
+
+    .payback-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      border-top: 1px solid #bbf7d0;
+      padding-top: 1rem;
+    }
+
+    .payback-row label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .payback-row input[type="number"] {
+      padding: 0.35rem 0.6rem;
+      border: 1.5px solid #86efac;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      width: 110px;
+      background: #fff;
+    }
+
+    #payback-result {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #15803d;
+    }
+
+    .split-charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .total-bar {
+      background: #fff;
+      border-left: 4px solid #16a34a;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .total-bar-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .total-bar-values {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .total-bar-total {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #16a34a;
+    }
+
+    .total-bar-south {
+      font-size: 0.95rem;
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .total-bar-gain {
+      font-size: 0.95rem;
+      color: #15803d;
+      font-weight: 600;
+      background: #dcfce7;
+      padding: 0.15rem 0.6rem;
+      border-radius: 20px;
+    }
+
+    .info-box {
+      font-size: 0.82rem;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-bottom: 2rem;
+    }
+
+    .chart-title-label {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 700px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .split-charts { grid-template-columns: 1fr; }
+      .finance-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PV Batterie-Analyse — Chüngstrasse 8, Embrach</h1>
+    <div style="display:flex;align-items:center;gap:2rem;">
+      <nav class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/forecast">Prognose</a>
+        <a href="/erweiterung" class="active">Erweiterung</a>
+      </nav>
+      <span id="last-updated">Laden...</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Period bar -->
+    <div class="period-bar" id="period-bar">
+      <button class="period-btn" data-period="1d" onclick="selectPeriod('1d')">1 Tag</button>
+      <button class="period-btn" data-period="7d" onclick="selectPeriod('7d')">7 Tage</button>
+      <button class="period-btn" data-period="1m" onclick="selectPeriod('1m')">30 Tage</button>
+      <button class="period-btn" data-period="3m" onclick="selectPeriod('3m')">3 Mon</button>
+      <button class="period-btn" data-period="6m" onclick="selectPeriod('6m')">6 Mon</button>
+      <button class="period-btn" data-period="9m" onclick="selectPeriod('9m')">9 Mon</button>
+      <button class="period-btn" data-period="1y" onclick="selectPeriod('1y')">1 Jahr</button>
+    </div>
+
+    <!-- 2. KPI row -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="border-top: 3px solid #3b82f6;">
+        <h3>Aktuelle Anlage · SSW</h3>
+        <div class="kpi-value" id="kpi-south" style="color:#3b82f6;">—</div>
+        <div class="kpi-subtitle" id="kpi-south-sub">—</div>
+      </div>
+      <div class="kpi-card" style="border-top: 3px solid #f59e0b;">
+        <h3>Nordseite · Schätzung</h3>
+        <div class="kpi-value" id="kpi-north" style="color:#f59e0b;">—</div>
+        <div class="kpi-subtitle" id="kpi-north-sub">—</div>
+      </div>
+      <div class="kpi-card" style="border-top: 3px solid #16a34a;">
+        <h3>Gesamt · kombiniert</h3>
+        <div class="kpi-value" id="kpi-total" style="color:#16a34a;">—</div>
+        <div class="kpi-subtitle" id="kpi-total-sub">—</div>
+      </div>
+    </div>
+
+    <!-- 3. CHF-Toggle button -->
+    <button class="chf-toggle-btn" id="chf-toggle-btn" onclick="toggleFinance()">
+      CHF-Analyse einblenden
+    </button>
+
+    <!-- 4. Finance panel (hidden by default) -->
+    <div class="finance-panel" id="finance-panel">
+      <div class="finance-grid">
+        <div class="finance-item">
+          <div class="finance-label">Zusatz / Jahr</div>
+          <div class="finance-value" id="fin-extra-kwh">—</div>
+          <div style="font-size:0.78rem;color:#6b7280;">kWh</div>
+        </div>
+        <div class="finance-item">
+          <div class="finance-label">Eigenverbrauch-Ersparnis</div>
+          <div class="finance-value" id="fin-self">—</div>
+          <div style="font-size:0.78rem;color:#6b7280;">CHF/Jahr</div>
+        </div>
+        <div class="finance-item">
+          <div class="finance-label">Einspeisung-Einnahmen</div>
+          <div class="finance-value" id="fin-feed">—</div>
+          <div style="font-size:0.78rem;color:#6b7280;">CHF/Jahr</div>
+        </div>
+        <div class="finance-item">
+          <div class="finance-label">Gesamtertrag / Jahr</div>
+          <div class="finance-value" id="fin-total">—</div>
+          <div style="font-size:0.78rem;color:#6b7280;">CHF/Jahr</div>
+        </div>
+      </div>
+      <div class="payback-row">
+        <label>
+          Investitionskosten (CHF):
+          <input type="number" id="investment-input" value="12000" min="0" step="500" oninput="calcPayback()">
+        </label>
+        <span id="payback-result">—</span>
+      </div>
+    </div>
+
+    <!-- 5. Split chart panels -->
+    <div class="split-charts">
+      <div class="chart-card">
+        <h3>
+          <span class="chart-title-label" style="background:#3b82f6;"></span>
+          Aktuelle Anlage · SSW 206°
+        </h3>
+        <canvas id="chart-south"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>
+          <span class="chart-title-label" style="background:#f59e0b;"></span>
+          Nordseite · Schätzung
+        </h3>
+        <canvas id="chart-north"></canvas>
+      </div>
+    </div>
+
+    <!-- 6. Total bar -->
+    <div class="total-bar" id="total-bar">
+      <div class="total-bar-label" id="total-bar-label">Gesamt</div>
+      <div class="total-bar-values">
+        <span class="total-bar-total" id="total-bar-combined">—</span>
+        <span class="total-bar-south" id="total-bar-south">—</span>
+        <span class="total-bar-gain" id="total-bar-gain">—</span>
+      </div>
+    </div>
+
+    <!-- 7. Info text -->
+    <div class="info-box">
+      Die Nordseiten-Schätzung basiert auf den gemessenen Produktionsdaten (Solar Manager),
+      skaliert mit dem solaren Einstrahlungsverhältnis beider Dachseiten (Open-Meteo).
+    </div>
+  </main>
+
+  <script src="/static/erweiterung.js"></script>
+</body>
+</html>
