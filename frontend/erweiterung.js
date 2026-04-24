@@ -69,11 +69,17 @@ function renderKpis(data) {
 // ─── Charts ──────────────────────────────────────────────────────────────────
 
 function renderCharts(data) {
-  renderSingleChart('south', data.south.daily, '#3b82f6', 'SSW (kWh)');
-  renderSingleChart('north', data.north_estimate.daily, '#f59e0b', 'Nordseite (kWh)');
+  const allValues = [
+    ...data.south.daily.map(d => d.kwh || 0),
+    ...data.north_estimate.daily.map(d => d.kwh || 0),
+  ];
+  const sharedMax = Math.ceil(Math.max(...allValues, 0) * 1.1);
+
+  renderSingleChart('south', data.south.daily, '#3b82f6', 'SSW (kWh)', sharedMax);
+  renderSingleChart('north', data.north_estimate.daily, '#f59e0b', 'Nordseite (kWh)', sharedMax);
 }
 
-function renderSingleChart(side, daily, color, label) {
+function renderSingleChart(side, daily, color, label, yMax) {
   destroyChart(side);
 
   const labels = daily.map(d => fmtDate(d.date));
@@ -109,6 +115,7 @@ function renderSingleChart(side, daily, color, label) {
         },
         y: {
           beginAtZero: true,
+          max: yMax,
           title: { display: true, text: 'kWh' },
         },
       },
