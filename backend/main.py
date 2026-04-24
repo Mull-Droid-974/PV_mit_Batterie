@@ -64,3 +64,7 @@ if FRONTEND_DIR.exists():
     @app.get("/forecast")
     def serve_forecast():
         return FileResponse(FRONTEND_DIR / "forecast.html")
+
+    @app.get("/erweiterung")
+    def serve_erweiterung():
+        return FileResponse(FRONTEND_DIR / "erweiterung.html")
