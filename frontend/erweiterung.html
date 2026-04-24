@@ -218,19 +218,20 @@
         <a href="/forecast">Prognose</a>
         <a href="/erweiterung" class="active">Erweiterung</a>
       </nav>
+      <span id="last-updated">Laden...</span>
     </div>
   </header>
 
   <main>
     <!-- 1. Period bar -->
     <div class="period-bar" id="period-bar">
-      <button class="period-btn" onclick="selectPeriod('1d')">1 Tag</button>
-      <button class="period-btn" onclick="selectPeriod('7d')">7 Tage</button>
-      <button class="period-btn" onclick="selectPeriod('30d')">30 Tage</button>
-      <button class="period-btn" onclick="selectPeriod('3m')">3 Mon</button>
-      <button class="period-btn" onclick="selectPeriod('6m')">6 Mon</button>
-      <button class="period-btn" onclick="selectPeriod('9m')">9 Mon</button>
-      <button class="period-btn" onclick="selectPeriod('1y')">1 Jahr</button>
+      <button class="period-btn" data-period="1d" onclick="selectPeriod('1d')">1 Tag</button>
+      <button class="period-btn" data-period="7d" onclick="selectPeriod('7d')">7 Tage</button>
+      <button class="period-btn" data-period="1m" onclick="selectPeriod('1m')">30 Tage</button>
+      <button class="period-btn" data-period="3m" onclick="selectPeriod('3m')">3 Mon</button>
+      <button class="period-btn" data-period="6m" onclick="selectPeriod('6m')">6 Mon</button>
+      <button class="period-btn" data-period="9m" onclick="selectPeriod('9m')">9 Mon</button>
+      <button class="period-btn" data-period="1y" onclick="selectPeriod('1y')">1 Jahr</button>
     </div>
 
     <!-- 2. KPI row -->

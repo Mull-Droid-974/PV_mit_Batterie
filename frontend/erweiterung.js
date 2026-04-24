@@ -10,6 +10,7 @@ function destroyChart(id) {
 }
 
 function fmtDate(iso) {
+  if (!iso) return '—';
   const [, m, d] = iso.split('-');
   return `${d}.${m}.`;
 }
@@ -24,14 +25,9 @@ function fmtKwh(value) {
 
 function selectPeriod(p) {
   document.querySelectorAll('.period-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.textContent.trim() === periodLabel(p));
+    btn.classList.toggle('active', btn.dataset.period === p);
   });
   loadComparison(p);
-}
-
-function periodLabel(p) {
-  const map = { '1d': '1 Tag', '7d': '7 Tage', '30d': '30 Tage', '3m': '3 Mon', '6m': '6 Mon', '9m': '9 Mon', '1y': '1 Jahr' };
-  return map[p] || p;
 }
 
 // ─── Data loading ────────────────────────────────────────────────────────────
@@ -45,8 +41,11 @@ async function loadComparison(period) {
     renderCharts(comparisonData);
     renderFinance(comparisonData);
     renderTotalBar(comparisonData);
+    document.getElementById('last-updated').textContent =
+      new Date().toLocaleTimeString('de-CH');
   } catch (err) {
     console.error('Failed to load comparison:', err);
+    document.getElementById('last-updated').textContent = 'Fehler beim Laden';
   }
 }
 
